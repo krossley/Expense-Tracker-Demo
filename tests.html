@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - Unit Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .test-case.passed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .test-case.failed {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .test-result {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .test-result.pass {
+            color: #28a745;
+        }
+        .test-result.fail {
+            color: #dc3545;
+        }
+        .summary {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .run-tests-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .run-tests-btn:hover {
+            background: #0056b3;
+        }
+        .error-details {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Expense Tracker Unit Tests</h1>
+        <p>Comprehensive unit tests for the Expense Tracker application</p>
+        
+        <button class="run-tests-btn" onclick="runAllTests()">Run All Tests</button>
+        
+        <div id="test-results">
+            <!-- Test results will be displayed here -->
+        </div>
+        
+        <div id="test-summary" class="summary" style="display: none;">
+            <!-- Test summary will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // Mock data and setup
+        let testTransactions = [];
+        let testBudgets = {};
+        let testResults = [];
+
+        // Test utilities
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed');
+            }
+        }
+
+        function assertEquals(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message || 'Values not equal'}: expected ${expected}, got ${actual}`);
+            }
+        }
+
+        function assertArrayEquals(actual, expected, message) {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                throw new Error(`${message || 'Arrays not equal'}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+            }
+        }
+
+        function runTest(testName, testFunction) {
+            try {
+                // Setup clean state for each test
+                testTransactions = [];
+                testBudgets = {};
+                
+                testFunction();
+                
+                testResults.push({
+                    name: testName,
+                    passed: true,
+                    error: null
+                });
+                
+                return true;
+            } catch (error) {
+                testResults.push({
+                    name: testName,
+                    passed: false,
+                    error: error.message
+                });
+                
+                return false;
+            }
+        }
+
+        // Category and label definitions (from main app)
+        const categories = {
+            income: [
+                'salary', 'freelance', 'business', 'investments', 'gifts', 'other-income'
+            ],
+            expense: [
+                'food', 'transportation', 'shopping', 'entertainment', 'bills', 
+                'healthcare', 'education', 'travel', 'other-expense'
+            ]
+        };
+
+        const categoryLabels = {
+            'salary': 'Salary',
+            'freelance': 'Freelance',
+            'business': 'Business',
+            'investments': 'Investments',
+            'gifts': 'Gifts',
+            'other-income': 'Other Income',
+            'food': 'Food & Dining',
+            'transportation': 'Transportation',
+            'shopping': 'Shopping',
+            'entertainment': 'Entertainment',
+            'bills': 'Bills & Utilities',
+            'healthcare': 'Healthcare',
+            'education': 'Education',
+            'travel': 'Travel',
+            'other-expense': 'Other Expense'
+        };
+
+        // Helper functions to test (simplified versions of main app functions)
+        function createTransaction(description, amount, type, category, date) {
+            return {
+                id: Date.now() + Math.random(), // Ensure unique ID for tests
+                description: description,
+                amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+                type: type,
+                category: category,
+                date: date,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        function addTransactionToArray(transactions, transaction) {
+            transactions.unshift(transaction);
+            return transactions;
+        }
+
+        function calculateTotals(transactions) {
+            const income = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = Math.abs(transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0));
+            
+            const balance = income - expenses;
+            
+            return { income, expenses, balance };
+        }
+
+        function filterTransactionsByType(transactions, type) {
+            return transactions.filter(t => t.type === type);
+        }
+
+        function filterTransactionsByCategory(transactions, category) {
+            return transactions.filter(t => t.category === category);
+        }
+
+        function filterTransactionsByPeriod(transactions, period) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            return transactions.filter(transaction => {
+                // Handle date string format (YYYY-MM-DD) properly
+                const transactionDateStr = transaction.date;
+                const transactionDate = new Date(transactionDateStr + 'T00:00:00');
+                
+                switch (period) {
+                    case 'today':
+                        const todayStr = now.toISOString().split('T')[0];
+                        return transactionDateStr === todayStr;
+                    case 'week':
+                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return transactionDate >= weekAgo;
+                    case 'month':
+                        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                        return transactionDate >= monthAgo;
+                    case 'year':
+                        const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                        return transactionDate >= yearAgo;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        function validateTransactionData(description, amount, type, category, date) {
+            const errors = [];
+            
+            if (!description || description.trim() === '') {
+                errors.push('Description is required');
+            }
+            
+            if (!amount || amount <= 0) {
+                errors.push('Amount must be greater than 0');
+            }
+            
+            if (amount > 1000000) {
+                errors.push('Amount seems too large');
+            }
+            
+            if (!type || !['income', 'expense'].includes(type)) {
+                errors.push('Type must be income or expense');
+            }
+            
+            if (!category || !categories[type]?.includes(category)) {
+                errors.push('Invalid category for the selected type');
+            }
+            
+            if (!date) {
+                errors.push('Date is required');
+            }
+            
+            return errors;
+        }
+
+        function calculateBudgetUsage(transactions, budgets, category) {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const monthlyExpenses = transactions
+                .filter(t => t.type === 'expense' && t.category === category && t.date.startsWith(currentMonth))
+                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            
+            const budgetAmount = budgets[category] || 0;
+            const percentage = budgetAmount > 0 ? (monthlyExpenses / budgetAmount) * 100 : 0;
+            
+            return {
+                spent: monthlyExpenses,
+                budget: budgetAmount,
+                percentage: percentage,
+                remaining: budgetAmount - monthlyExpenses
+            };
+        }
+
+        // Test Cases
+
+        // Transaction Creation Tests
+        function testCreateTransaction() {
+            const transaction = createTransaction('Test Expense', 100, 'expense', 'food', '2025-07-20');
+            
+            assert(transaction.description === 'Test Expense', 'Description should match');
+            assert(transaction.amount === -100, 'Expense amount should be negative');
+            assert(transaction.type === 'expense', 'Type should match');
+            assert(transaction.category === 'food', 'Category should match');
+            assert(transaction.date === '2025-07-20', 'Date should match');
+            assert(transaction.id, 'Should have an ID');
+            assert(transaction.timestamp, 'Should have a timestamp');
+        }
+
+        function testCreateIncomeTransaction() {
+            const transaction = createTransaction('Test Income', 1000, 'income', 'salary', '2025-07-20');
+            
+            assert(transaction.amount === 1000, 'Income amount should be positive');
+            assert(transaction.type === 'income', 'Type should be income');
+        }
+
+        // Transaction Array Management Tests
+        function testAddTransactionToArray() {
+            const transaction = createTransaction('Test', 100, 'expense', 'food', '2025-07-20');
+            addTransactionToArray(testTransactions, transaction);
+            
+            assert(testTransactions.length === 1, 'Should have one transaction');
+            assert(testTransactions[0].description === 'Test', 'Should be the added transaction');
+        }
+
+        function testAddMultipleTransactions() {
+            const transaction1 = createTransaction('Test 1', 100, 'expense', 'food', '2025-07-20');
+            const transaction2 = createTransaction('Test 2', 200, 'income', 'salary', '2025-07-20');
+            
+            addTransactionToArray(testTransactions, transaction1);
+            addTransactionToArray(testTransactions, transaction2);
+            
+            assert(testTransactions.length === 2, 'Should have two transactions');
+            assert(testTransactions[0].description === 'Test 2', 'Latest should be first');
+        }
+
+        // Calculation Tests
+        function testCalculateTotalsEmpty() {
+            const totals = calculateTotals([]);
+            
+            assertEquals(totals.income, 0, 'Income should be 0 for empty array');
+            assertEquals(totals.expenses, 0, 'Expenses should be 0 for empty array');
+            assertEquals(totals.balance, 0, 'Balance should be 0 for empty array');
+        }
+
+        function testCalculateTotalsWithData() {
+            const transactions = [
+                createTransaction('Income', 1000, 'income', 'salary', '2025-07-20'),
+                createTransaction('Expense', 300, 'expense', 'food', '2025-07-20'),
+                createTransaction('Expense', 200, 'expense', 'transportation', '2025-07-20')
+            ];
+            
+            const totals = calculateTotals(transactions);
+            
+            assertEquals(totals.income, 1000, 'Income should be 1000');
+            assertEquals(totals.expenses, 500, 'Expenses should be 500');
+            assertEquals(totals.balance, 500, 'Balance should be 500');
+        }
+
+        function testCalculateTotalsNegativeBalance() {
+            const transactions = [
+                createTransaction('Income', 300, 'income', 'salary', '2025-07-20'),
+                createTransaction('Expense', 500, 'expense', 'food', '2025-07-20')
+            ];
+            
+            const totals = calculateTotals(transactions);
+            
+            assertEquals(totals.balance, -200, 'Balance should be negative');
+        }
+
+        // Filtering Tests
+        function testFilterByType() {
+            const transactions = [
+                createTransaction('Income', 1000, 'income', 'salary', '2025-07-20'),
+                createTransaction('Expense', 300, 'expense', 'food', '2025-07-20'),
+                createTransaction('Income', 500, 'income', 'freelance', '2025-07-20')
+            ];
+            
+            const incomeTransactions = filterTransactionsByType(transactions, 'income');
+            const expenseTransactions = filterTransactionsByType(transactions, 'expense');
+            
+            assertEquals(incomeTransactions.length, 2, 'Should have 2 income transactions');
+            assertEquals(expenseTransactions.length, 1, 'Should have 1 expense transaction');
+        }
+
+        function testFilterByCategory() {
+            const transactions = [
+                createTransaction('Food 1', 100, 'expense', 'food', '2025-07-20'),
+                createTransaction('Food 2', 200, 'expense', 'food', '2025-07-20'),
+                createTransaction('Transport', 50, 'expense', 'transportation', '2025-07-20')
+            ];
+            
+            const foodTransactions = filterTransactionsByCategory(transactions, 'food');
+            
+            assertEquals(foodTransactions.length, 2, 'Should have 2 food transactions');
+            assert(foodTransactions.every(t => t.category === 'food'), 'All should be food category');
+        }
+
+        function testFilterByPeriodToday() {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            const transactions = [
+                createTransaction('Today', 100, 'expense', 'food', today),
+                createTransaction('Yesterday', 200, 'expense', 'food', yesterday)
+            ];
+            
+            const todayTransactions = filterTransactionsByPeriod(transactions, 'today');
+            
+            assertEquals(todayTransactions.length, 1, 'Should have 1 transaction from today');
+            assertEquals(todayTransactions[0].description, 'Today', 'Should be the today transaction');
+        }
+
+        // Validation Tests
+        function testValidateTransactionDataValid() {
+            const errors = validateTransactionData('Test', 100, 'expense', 'food', '2025-07-20');
+            
+            assertEquals(errors.length, 0, 'Should have no validation errors for valid data');
+        }
+
+        function testValidateTransactionDataMissingDescription() {
+            const errors = validateTransactionData('', 100, 'expense', 'food', '2025-07-20');
+            
+            assert(errors.length > 0, 'Should have validation errors');
+            assert(errors.some(e => e.includes('Description')), 'Should have description error');
+        }
+
+        function testValidateTransactionDataInvalidAmount() {
+            const errors = validateTransactionData('Test', 0, 'expense', 'food', '2025-07-20');
+            
+            assert(errors.some(e => e.includes('Amount')), 'Should have amount error');
+        }
+
+        function testValidateTransactionDataLargeAmount() {
+            const errors = validateTransactionData('Test', 2000000, 'expense', 'food', '2025-07-20');
+            
+            assert(errors.some(e => e.includes('large')), 'Should have large amount error');
+        }
+
+        function testValidateTransactionDataInvalidType() {
+            const errors = validateTransactionData('Test', 100, 'invalid', 'food', '2025-07-20');
+            
+            assert(errors.some(e => e.includes('Type')), 'Should have type error');
+        }
+
+        function testValidateTransactionDataInvalidCategory() {
+            const errors = validateTransactionData('Test', 100, 'income', 'food', '2025-07-20');
+            
+            assert(errors.some(e => e.includes('category')), 'Should have category error for income type with expense category');
+        }
+
+        // Budget Tests
+        function testCalculateBudgetUsageNoBudget() {
+            const transactions = [
+                createTransaction('Food', 100, 'expense', 'food', '2025-07-20')
+            ];
+            const budgets = {};
+            
+            const usage = calculateBudgetUsage(transactions, budgets, 'food');
+            
+            assertEquals(usage.budget, 0, 'Budget should be 0 when not set');
+            assertEquals(usage.percentage, 0, 'Percentage should be 0 when no budget');
+        }
+
+        function testCalculateBudgetUsageWithBudget() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const transactions = [
+                createTransaction('Food', 300, 'expense', 'food', currentMonth + '-15')
+            ];
+            const budgets = { food: 1000 };
+            
+            const usage = calculateBudgetUsage(transactions, budgets, 'food');
+            
+            assertEquals(usage.spent, 300, 'Should have spent 300');
+            assertEquals(usage.budget, 1000, 'Budget should be 1000');
+            assertEquals(usage.percentage, 30, 'Should be 30% of budget');
+            assertEquals(usage.remaining, 700, 'Should have 700 remaining');
+        }
+
+        function testCalculateBudgetUsageOverBudget() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const transactions = [
+                createTransaction('Food', 1200, 'expense', 'food', currentMonth + '-15')
+            ];
+            const budgets = { food: 1000 };
+            
+            const usage = calculateBudgetUsage(transactions, budgets, 'food');
+            
+            assertEquals(usage.percentage, 120, 'Should be 120% of budget');
+            assertEquals(usage.remaining, -200, 'Should be -200 remaining (over budget)');
+        }
+
+        // Category Tests
+        function testCategoryLabelsExist() {
+            const allCategories = [...categories.income, ...categories.expense];
+            
+            allCategories.forEach(category => {
+                assert(categoryLabels[category], `Should have label for category: ${category}`);
+            });
+        }
+
+        function testCategoryStructure() {
+            assert(Array.isArray(categories.income), 'Income categories should be an array');
+            assert(Array.isArray(categories.expense), 'Expense categories should be an array');
+            assert(categories.income.length > 0, 'Should have income categories');
+            assert(categories.expense.length > 0, 'Should have expense categories');
+        }
+
+        // Test Runner
+        function runAllTests() {
+            testResults = [];
+            
+            const tests = [
+                // Transaction Creation
+                { name: 'Create Expense Transaction', func: testCreateTransaction },
+                { name: 'Create Income Transaction', func: testCreateIncomeTransaction },
+                
+                // Array Management
+                { name: 'Add Transaction to Array', func: testAddTransactionToArray },
+                { name: 'Add Multiple Transactions', func: testAddMultipleTransactions },
+                
+                // Calculations
+                { name: 'Calculate Totals - Empty', func: testCalculateTotalsEmpty },
+                { name: 'Calculate Totals - With Data', func: testCalculateTotalsWithData },
+                { name: 'Calculate Totals - Negative Balance', func: testCalculateTotalsNegativeBalance },
+                
+                // Filtering
+                { name: 'Filter by Type', func: testFilterByType },
+                { name: 'Filter by Category', func: testFilterByCategory },
+                { name: 'Filter by Period - Today', func: testFilterByPeriodToday },
+                
+                // Validation
+                { name: 'Validate Valid Data', func: testValidateTransactionDataValid },
+                { name: 'Validate Missing Description', func: testValidateTransactionDataMissingDescription },
+                { name: 'Validate Invalid Amount', func: testValidateTransactionDataInvalidAmount },
+                { name: 'Validate Large Amount', func: testValidateTransactionDataLargeAmount },
+                { name: 'Validate Invalid Type', func: testValidateTransactionDataInvalidType },
+                { name: 'Validate Invalid Category', func: testValidateTransactionDataInvalidCategory },
+                
+                // Budget
+                { name: 'Budget Usage - No Budget', func: testCalculateBudgetUsageNoBudget },
+                { name: 'Budget Usage - With Budget', func: testCalculateBudgetUsageWithBudget },
+                { name: 'Budget Usage - Over Budget', func: testCalculateBudgetUsageOverBudget },
+                
+                // Categories
+                { name: 'Category Labels Exist', func: testCategoryLabelsExist },
+                { name: 'Category Structure', func: testCategoryStructure }
+            ];
+            
+            console.log('Running tests...');
+            
+            tests.forEach(test => {
+                runTest(test.name, test.func);
+            });
+            
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('test-results');
+            const summaryContainer = document.getElementById('test-summary');
+            
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = testResults.filter(r => r.failed).length;
+            const total = testResults.length;
+            
+            // Display individual test results
+            container.innerHTML = testResults.map(result => `
+                <div class="test-case ${result.passed ? 'passed' : 'failed'}">
+                    <strong>${result.name}</strong>
+                    <div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                        ${result.passed ? '✅ PASSED' : '❌ FAILED'}
+                    </div>
+                    ${result.error ? `<div class="error-details">Error: ${result.error}</div>` : ''}
+                </div>
+            `).join('');
+            
+            // Display summary
+            summaryContainer.innerHTML = `
+                <h3>Test Summary</h3>
+                <p><strong>Total Tests:</strong> ${total}</p>
+                <p><strong>Passed:</strong> <span style="color: #28a745;">${passed}</span></p>
+                <p><strong>Failed:</strong> <span style="color: #dc3545;">${failed}</span></p>
+                <p><strong>Success Rate:</strong> ${((passed / total) * 100).toFixed(1)}%</p>
+                ${failed === 0 ? '<p style="color: #28a745; font-weight: bold;">🎉 All tests passed!</p>' : ''}
+            `;
+            
+            summaryContainer.style.display = 'block';
+            
+            console.log(`Tests completed: ${passed}/${total} passed`);
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Unit test page loaded');
+        });
+    </script>
+</body>
+</html>
