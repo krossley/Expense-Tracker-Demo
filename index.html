@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .income .value { color: #28a745; }
+        .expenses .value { color: #dc3545; }
+        .balance .value { color: #667eea; }
+        .transactions-count .value { color: #ffc107; }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-income {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-expense {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        .transactions-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .transactions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .transactions-header h2 {
+            color: #667eea;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+        }
+
+        .transactions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-description {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .transaction-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 15px;
+        }
+
+        .transaction-amount.income {
+            color: #28a745;
+        }
+
+        .transaction-amount.expense {
+            color: #dc3545;
+        }
+
+        .transaction-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .budget-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .budget-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .budget-info {
+            flex: 1;
+        }
+
+        .budget-category {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .budget-progress {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .budget-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .budget-bar.safe { background: #28a745; }
+        .budget-bar.warning { background: #ffc107; }
+        .budget-bar.danger { background: #dc3545; }
+
+        .budget-amounts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 50px 20px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .transaction-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Expense Tracker</h1>
+            <p>Track your income and expenses to manage your budget better</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="stat-card income">
+                <div class="icon">💵</div>
+                <div class="value" id="totalIncome">$0.00</div>
+                <div class="label">Total Income</div>
+            </div>
+            <div class="stat-card expenses">
+                <div class="icon">💸</div>
+                <div class="value" id="totalExpenses">$0.00</div>
+                <div class="label">Total Expenses</div>
+            </div>
+            <div class="stat-card balance">
+                <div class="icon">💰</div>
+                <div class="value" id="balance">$0.00</div>
+                <div class="label">Balance</div>
+            </div>
+            <div class="stat-card transactions-count">
+                <div class="icon">📊</div>
+                <div class="value" id="transactionCount">0</div>
+                <div class="label">Transactions</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Add Transaction Form -->
+            <div class="card">
+                <h2>💳 Add Transaction</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="description" placeholder="Enter description..." required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="type" required>
+                                <option value="">Select Type</option>
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">Add Transaction</button>
+                </form>
+            </div>
+
+            <!-- Budget Management -->
+            <div class="card">
+                <h2>🎯 Budget Management</h2>
+                <form id="budgetForm">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="budgetCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="food">Food & Dining</option>
+                            <option value="transportation">Transportation</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="bills">Bills & Utilities</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="education">Education</option>
+                            <option value="travel">Travel</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Monthly Budget Limit</label>
+                        <input type="number" id="budgetAmount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">Set Budget</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transactions List -->
+        <div class="transactions-section">
+            <div class="transactions-header">
+                <h2>📋 Recent Transactions</h2>
+                <button class="btn btn-small" onclick="clearAllTransactions()">Clear All</button>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <select id="filterType" onchange="filterTransactions()">
+                        <option value="">All Types</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="filterCategory" onchange="filterTransactions()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="filterPeriod" onchange="filterTransactions()">
+                        <option value="">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="transactions-list" id="transactionsList">
+                <div class="empty-state">
+                    <h3>No transactions yet</h3>
+                    <p>Add your first transaction to get started!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>📊 Expenses by Category</h3>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h3>📈 Monthly Trends</h3>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="budget-section">
+            <h2>🎯 Budget Overview</h2>
+            <div id="budgetOverview">
+                <div class="empty-state">
+                    <h3>No budgets set</h3>
+                    <p>Set budget limits for different categories to track your spending!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <h2 style="color: white; margin-bottom: 20px;">📤 Export Data</h2>
+            <div class="export-buttons">
+                <button class="btn" onclick="exportToCSV()">Export to CSV</button>
+                <button class="btn" onclick="generateReport()">Generate Report</button>
+                <button class="btn" onclick="exportToJSON()">Export to JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transactions = [];
+        let budgets = {};
+        let categoryChart = null;
+        let trendChart = null;
+
+        const categories = {
+            income: [
+                'salary', 'freelance', 'business', 'investments', 'gifts', 'other-income'
+            ],
+            expense: [
+                'food', 'transportation', 'shopping', 'entertainment', 'bills', 
+                'healthcare', 'education', 'travel', 'other-expense'
+            ]
+        };
+
+        const categoryLabels = {
+            'salary': 'Salary',
+            'freelance': 'Freelance',
+            'business': 'Business',
+            'investments': 'Investments',
+            'gifts': 'Gifts',
+            'other-income': 'Other Income',
+            'food': 'Food & Dining',
+            'transportation': 'Transportation',
+            'shopping': 'Shopping',
+            'entertainment': 'Entertainment',
+            'bills': 'Bills & Utilities',
+            'healthcare': 'Healthcare',
+            'education': 'Education',
+            'travel': 'Travel',
+            'other-expense': 'Other Expense'
+        };
+
+        // Show notification function - moved to top to avoid reference errors
+        function showNotification(message, type = 'success') {
+            // Remove existing notification if any
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                transform: translateX(400px);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Load saved data with error handling
+        function loadSavedData() {
+            try {
+                const savedTransactions = localStorage.getItem('transactions');
+                const savedBudgets = localStorage.getItem('budgets');
+                
+                if (savedTransactions) {
+                    const parsed = JSON.parse(savedTransactions);
+                    // Validate the data structure
+                    if (Array.isArray(parsed)) {
+                        transactions = parsed.filter(t => t && typeof t === 'object' && t.id);
+                    }
+                }
+                
+                if (savedBudgets) {
+                    const parsed = JSON.parse(savedBudgets);
+                    if (typeof parsed === 'object' && parsed !== null) {
+                        budgets = parsed;
+                    }
+                }
+                
+                updateDashboard();
+                displayTransactions();
+                updateCharts();
+                displayBudgetOverview();
+                
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+                showNotification('Error loading saved data. Starting fresh.', 'error');
+                
+                // Reset to empty state if data is corrupted
+                transactions = [];
+                budgets = {};
+                updateDashboard();
+                displayTransactions();
+                updateCharts();
+                displayBudgetOverview();
+            }
+        }
+
+        // Save data with error handling
+        function saveData() {
+            try {
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                localStorage.setItem('budgets', JSON.stringify(budgets));
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showNotification('Error saving data. Please check your browser storage.', 'error');
+            }
+        }
+
+        // Initialize app
+        function initializeApp() {
+            // Set current date
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            // Populate filter dropdowns
+            populateFilterDropdowns();
+            
+            // Load saved data
+            loadSavedData();
+            
+            // Initialize charts
+            initializeCharts();
+        }
+
+        // Populate category dropdown based on type
+        function updateCategoryOptions() {
+            const type = document.getElementById('type').value;
+            const categorySelect = document.getElementById('category');
+            
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            
+            if (type && categories[type]) {
+                categories[type].forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = categoryLabels[category];
+                    categorySelect.appendChild(option);
+                });
+            }
+        }
+
+        // Populate filter dropdowns
+        function populateFilterDropdowns() {
+            const filterCategory = document.getElementById('filterCategory');
+            const allCategories = [...categories.income, ...categories.expense];
+            
+            allCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = categoryLabels[category];
+                filterCategory.appendChild(option);
+            });
+        }
+
+        // Add transaction with improved validation
+        function addTransaction(e) {
+            e.preventDefault();
+            
+            const description = document.getElementById('description').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            
+            // Enhanced validation
+            if (!description) {
+                alert('Please enter a description');
+                document.getElementById('description').focus();
+                return;
+            }
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount greater than 0');
+                document.getElementById('amount').focus();
+                return;
+            }
+            
+            if (amount > 1000000) {
+                alert('Amount seems too large. Please verify.');
+                document.getElementById('amount').focus();
+                return;
+            }
+            
+            if (!type) {
+                alert('Please select a transaction type');
+                document.getElementById('type').focus();
+                return;
+            }
+            
+            if (!category) {
+                alert('Please select a category');
+                document.getElementById('category').focus();
+                return;
+            }
+            
+            if (!date) {
+                alert('Please select a date');
+                document.getElementById('date').focus();
+                return;
+            }
+            
+            // Check if date is not in the future (more than today)
+            const selectedDate = new Date(date);
+            const today = new Date();
+            today.setHours(23, 59, 59, 999); // End of today
+            
+            if (selectedDate > today) {
+                if (!confirm('The date is in the future. Do you want to continue?')) {
+                    return;
+                }
+            }
+            
+            try {
+                const transaction = {
+                    id: Date.now(),
+                    description: description,
+                    amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+                    type: type,
+                    category: category,
+                    date: date,
+                    timestamp: new Date().toISOString()
+                };
+                
+                transactions.unshift(transaction);
+                saveData();
+                
+                // Reset form
+                document.getElementById('transactionForm').reset();
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('category').innerHTML = '<option value="">Select Category</option>';
+                
+                // Update UI
+                updateDashboard();
+                displayTransactions();
+                updateCharts();
+                displayBudgetOverview();
+                
+                // Show success message
+                showNotification('Transaction added successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error adding transaction:', error);
+                alert('Error adding transaction. Please try again.');
+            }
+        }
+
+        // Set budget with improved validation
+        function setBudget(e) {
+            e.preventDefault();
+            
+            const category = document.getElementById('budgetCategory').value;
+            const amount = parseFloat(document.getElementById('budgetAmount').value);
+            
+            if (!category) {
+                alert('Please select a category');
+                document.getElementById('budgetCategory').focus();
+                return;
+            }
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid budget amount greater than 0');
+                document.getElementById('budgetAmount').focus();
+                return;
+            }
+            
+            if (amount > 100000) {
+                if (!confirm('Budget amount seems very high. Do you want to continue?')) {
+                    return;
+                }
+            }
+            
+            try {
+                budgets[category] = amount;
+                saveData();
+                
+                // Reset form
+                document.getElementById('budgetForm').reset();
+                
+                // Update UI
+                displayBudgetOverview();
+                
+                // Show success message
+                showNotification(`Budget set for ${categoryLabels[category]}: ${amount.toFixed(2)}`, 'success');
+                
+            } catch (error) {
+                console.error('Error setting budget:', error);
+                alert('Error setting budget. Please try again.');
+            }
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            const income = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = Math.abs(transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0));
+            
+            const balance = income - expenses;
+            
+            document.getElementById('totalIncome').textContent = `$${income.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `$${expenses.toFixed(2)}`;
+            document.getElementById('balance').textContent = `$${balance.toFixed(2)}`;
+            document.getElementById('transactionCount').textContent = transactions.length;
+            
+            // Update balance color
+            const balanceElement = document.getElementById('balance');
+            balanceElement.style.color = balance >= 0 ? '#28a745' : '#dc3545';
+        }
+
+        // Display transactions
+        function displayTransactions(filteredTransactions = null) {
+            const container = document.getElementById('transactionsList');
+            const transactionsToShow = filteredTransactions || transactions;
+            
+            if (transactionsToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No transactions found</h3>
+                        <p>Try adjusting your filters or add a new transaction!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = transactionsToShow.map(transaction => `
+                <div class="transaction-item">
+                    <div class="transaction-info">
+                        <div class="transaction-description">${transaction.description}</div>
+                        <div class="transaction-meta">
+                            ${categoryLabels[transaction.category]} • ${new Date(transaction.date).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div class="transaction-amount ${transaction.type}">
+                        ${transaction.type === 'income' ? '+' : ''}$${Math.abs(transaction.amount).toFixed(2)}
+                    </div>
+                    <div class="transaction-actions">
+                        <button class="btn btn-small" onclick="deleteTransaction(${transaction.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const typeFilter = document.getElementById('filterType').value;
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const periodFilter = document.getElementById('filterPeriod').value;
+            
+            let filtered = transactions;
+            
+            // Filter by type
+            if (typeFilter) {
+                filtered = filtered.filter(t => t.type === typeFilter);
+            }
+            
+            // Filter by category
+            if (categoryFilter) {
+                filtered = filtered.filter(t => t.category === categoryFilter);
+            }
+            
+            // Filter by period
+            if (periodFilter) {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                filtered = filtered.filter(transaction => {
+                    const transactionDate = new Date(transaction.date);
+                    
+                    switch (periodFilter) {
+                        case 'today':
+                            return transactionDate >= today;
+                        case 'week':
+                            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return transactionDate >= weekAgo;
+                        case 'month':
+                            const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                            return transactionDate >= monthAgo;
+                        case 'year':
+                            const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                            return transactionDate >= yearAgo;
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            displayTransactions(filtered);
+        }
+
+        // Delete transaction
+        function deleteTransaction(id) {
+            if (confirm('Are you sure you want to delete this transaction?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+                updateDashboard();
+                displayTransactions();
+                updateCharts();
+                displayBudgetOverview();
+            }
+        }
+
+        // Clear all transactions
+        function clearAllTransactions() {
+            if (confirm('Are you sure you want to delete ALL transactions? This cannot be undone.')) {
+                transactions = [];
+                saveData();
+                updateDashboard();
+                displayTransactions();
+                updateCharts();
+                displayBudgetOverview();
+            }
+        }
+
+        // Initialize charts with error handling
+        function initializeCharts() {
+            try {
+                // Category Chart (Pie)
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                categoryChart = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+                
+                // Trend Chart (Line)
+                const trendCtx = document.getElementById('trendChart').getContext('2d');
+                trendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Income',
+                            data: [],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: true
+                        }, {
+                            label: 'Expenses',
+                            data: [],
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                console.log('Charts initialized successfully');
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+                // Hide chart containers if Chart.js fails to load
+                document.querySelector('.charts-section').style.display = 'none';
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;';
+                errorDiv.innerHTML = '<strong>Charts temporarily unavailable.</strong> All other features work normally.';
+                document.querySelector('.charts-section').parentNode.insertBefore(errorDiv, document.querySelector('.charts-section'));
+            }
+        }
+
+        // Update charts with error handling
+        function updateCharts() {
+            try {
+                if (categoryChart && trendChart) {
+                    updateCategoryChart();
+                    updateTrendChart();
+                }
+            } catch (error) {
+                console.error('Error updating charts:', error);
+            }
+        }
+
+        // Update category chart with error handling
+        function updateCategoryChart() {
+            try {
+                if (!categoryChart) return;
+                
+                const expensesByCategory = {};
+                
+                transactions
+                    .filter(t => t.type === 'expense')
+                    .forEach(transaction => {
+                        const category = categoryLabels[transaction.category];
+                        if (category) {
+                            expensesByCategory[category] = (expensesByCategory[category] || 0) + Math.abs(transaction.amount);
+                        }
+                    });
+                
+                const labels = Object.keys(expensesByCategory);
+                const data = Object.values(expensesByCategory);
+                
+                categoryChart.data.labels = labels;
+                categoryChart.data.datasets[0].data = data;
+                categoryChart.update('none'); // Disable animation for better performance
+            } catch (error) {
+                console.error('Error updating category chart:', error);
+            }
+        }
+
+        // Update trend chart with error handling
+        function updateTrendChart() {
+            try {
+                if (!trendChart) return;
+                
+                const monthlyData = {};
+                
+                transactions.forEach(transaction => {
+                    try {
+                        const date = new Date(transaction.date);
+                        if (isNaN(date.getTime())) return; // Skip invalid dates
+                        
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        
+                        if (!monthlyData[monthKey]) {
+                            monthlyData[monthKey] = { income: 0, expenses: 0 };
+                        }
+                        
+                        if (transaction.type === 'income') {
+                            monthlyData[monthKey].income += transaction.amount;
+                        } else {
+                            monthlyData[monthKey].expenses += Math.abs(transaction.amount);
+                        }
+                    } catch (dateError) {
+                        console.warn('Invalid transaction date:', transaction.date);
+                    }
+                });
+                
+                const sortedMonths = Object.keys(monthlyData).sort();
+                const labels = sortedMonths.map(month => {
+                    try {
+                        const [year, monthNum] = month.split('-');
+                        return new Date(year, monthNum - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    } catch (error) {
+                        return month; // Fallback to raw month string
+                    }
+                });
+                
+                const incomeData = sortedMonths.map(month => monthlyData[month].income);
+                const expenseData = sortedMonths.map(month => monthlyData[month].expenses);
+                
+                trendChart.data.labels = labels;
+                trendChart.data.datasets[0].data = incomeData;
+                trendChart.data.datasets[1].data = expenseData;
+                trendChart.update('none'); // Disable animation for better performance
+            } catch (error) {
+                console.error('Error updating trend chart:', error);
+            }
+        }
+
+        // Display budget overview
+        function displayBudgetOverview() {
+            const container = document.getElementById('budgetOverview');
+            
+            if (Object.keys(budgets).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No budgets set</h3>
+                        <p>Set budget limits for different categories to track your spending!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+            const monthlyExpenses = {};
+            
+            // Calculate expenses for current month by category
+            transactions
+                .filter(t => t.type === 'expense' && t.date.startsWith(currentMonth))
+                .forEach(transaction => {
+                    const category = transaction.category;
+                    monthlyExpenses[category] = (monthlyExpenses[category] || 0) + Math.abs(transaction.amount);
+                });
+            
+            container.innerHTML = Object.entries(budgets).map(([category, budgetAmount]) => {
+                const spent = monthlyExpenses[category] || 0;
+                const percentage = (spent / budgetAmount) * 100;
+                const remaining = budgetAmount - spent;
+                
+                let barClass = 'safe';
+                if (percentage > 80) barClass = 'warning';
+                if (percentage > 100) barClass = 'danger';
+                
+                return `
+                    <div class="budget-item">
+                        <div class="budget-info">
+                            <div class="budget-category">${categoryLabels[category]}</div>
+                            <div class="budget-progress">
+                                <div class="budget-bar ${barClass}" style="width: ${Math.min(percentage, 100)}%"></div>
+                            </div>
+                            <div class="budget-amounts">
+                                <span>Spent: ${spent.toFixed(2)}</span>
+                                <span>Remaining: ${remaining.toFixed(2)}</span>
+                                <span>Budget: ${budgetAmount.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="budget-actions">
+                            <button class="btn btn-small" onclick="deleteBudget('${category}')">Remove</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Delete budget
+        function deleteBudget(category) {
+            if (confirm(`Remove budget for ${categoryLabels[category]}?`)) {
+                delete budgets[category];
+                saveData();
+                displayBudgetOverview();
+            }
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            if (transactions.length === 0) {
+                alert('No transactions to export!');
+                return;
+            }
+            
+            const headers = ['Date', 'Description', 'Category', 'Type', 'Amount'];
+            const csvContent = [
+                headers.join(','),
+                ...transactions.map(t => [
+                    t.date,
+                    `"${t.description}"`,
+                    categoryLabels[t.category],
+                    t.type,
+                    Math.abs(t.amount).toFixed(2)
+                ].join(','))
+            ].join('\n');
+            
+            downloadFile('transactions.csv', csvContent, 'text/csv');
+        }
+
+        // Export to JSON
+        function exportToJSON() {
+            if (transactions.length === 0) {
+                alert('No transactions to export!');
+                return;
+            }
+            
+            const data = {
+                transactions,
+                budgets,
+                exportDate: new Date().toISOString(),
+                summary: {
+                    totalTransactions: transactions.length,
+                    totalIncome: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+                    totalExpenses: Math.abs(transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0))
+                }
+            };
+            
+            downloadFile('expense-data.json', JSON.stringify(data, null, 2), 'application/json');
+        }
+
+        // Generate report
+        function generateReport() {
+            if (transactions.length === 0) {
+                alert('No transactions to generate report!');
+                return;
+            }
+            
+            const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const expenses = Math.abs(transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+            const balance = income - expenses;
+            
+            const expensesByCategory = {};
+            transactions
+                .filter(t => t.type === 'expense')
+                .forEach(t => {
+                    const category = categoryLabels[t.category];
+                    expensesByCategory[category] = (expensesByCategory[category] || 0) + Math.abs(t.amount);
+                });
+            
+            const topExpenseCategory = Object.entries(expensesByCategory)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            const report = `
+EXPENSE TRACKER REPORT
+Generated on: ${new Date().toLocaleDateString()}
+
+=== SUMMARY ===
+Total Income: ${income.toFixed(2)}
+Total Expenses: ${expenses.toFixed(2)}
+Balance: ${balance.toFixed(2)}
+Total Transactions: ${transactions.length}
+
+=== EXPENSES BY CATEGORY ===
+${Object.entries(expensesByCategory)
+    .sort(([,a], [,b]) => b - a)
+    .map(([category, amount]) => `${category}: ${amount.toFixed(2)}`)
+    .join('\n')}
+
+=== INSIGHTS ===
+${balance >= 0 ? 'You are in the positive! Great job managing your finances.' : 'You are spending more than you earn. Consider reviewing your expenses.'}
+${topExpenseCategory ? `Your highest expense category is ${topExpenseCategory[0]} with ${topExpenseCategory[1].toFixed(2)} spent.` : ''}
+
+=== RECENT TRANSACTIONS ===
+${transactions.slice(0, 10).map(t => 
+    `${t.date} | ${t.description} | ${categoryLabels[t.category]} | ${t.type === 'income' ? '+' : '-'}${Math.abs(t.amount).toFixed(2)}`
+).join('\n')}
+            `.trim();
+            
+            downloadFile('expense-report.txt', report, 'text/plain');
+        }
+
+        // Download file helper
+        function downloadFile(filename, content, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Form event listeners
+            document.getElementById('transactionForm').addEventListener('submit', addTransaction);
+            document.getElementById('budgetForm').addEventListener('submit', setBudget);
+            
+            // Type change listener
+            document.getElementById('type').addEventListener('change', updateCategoryOptions);
+        });
+    </script>
+</body>
+</html>
